@@ -228,6 +228,7 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 	private WifiManager mWifiManager;
 	private Timer mEnvSensorsTimer = new Timer();
 	Sensor mAccelerometer;
+	Sensor mGyroscope;
 	Sensor mMagnetometer;
 	Sensor mAmbientTemperature;
 	Sensor mAmbientLight;
@@ -290,7 +291,7 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 							else
 							{
 								updateState(mState==State.STATE_VISUALIZING?State.STATE_VISUALIZING_CAMERA:State.STATE_CAMERA);
-								if(mState==State.STATE_VISUALIZING_CAMERA && mItemLocalizationMode.isChecked())
+								if(!StreamOnlyPublisher.isEnabled() && mState==State.STATE_VISUALIZING_CAMERA && mItemLocalizationMode.isChecked())
 								{
 									RTABMapLib.setPausedMapping(nativeApplication, false);
 								}
@@ -588,9 +589,10 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 			public void onProviderDisabled(String provider) {}
 		};
 
-		mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-		mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+			mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+			mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+			mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+			mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 		mAmbientTemperature = mSensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
 		mAmbientLight = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
 		mAmbientAirPressure = mSensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
@@ -872,6 +874,7 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 			RTABMapLib.destroyNativeApplication(nativeApplication);
 			nativeApplication = 0;
 		}
+		StreamOnlyPublisher.close();
 	}
 
 	@Override
@@ -881,6 +884,7 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 			if (event.sensor == mAccelerometer) {
 				System.arraycopy(event.values, 0, mLastAccelerometer, 0, event.values.length);
 				mLastAccelerometerSet = true;
+				StreamOnlyPublisher.updateAccel(event.values[0], event.values[1], event.values[2], event.timestamp);
 			} else if (event.sensor == mMagnetometer) {
 				System.arraycopy(event.values, 0, mLastMagnetometer, 0, event.values.length);
 				mLastMagnetometerSet = true;
@@ -897,6 +901,10 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 					mCompassDeg += 360.0f;
 				}
 			}
+		}
+		else if(event.sensor == mGyroscope)
+		{
+			StreamOnlyPublisher.updateGyro(event.values[0], event.values[1], event.values[2], event.timestamp);
 		}
 		else if(event.sensor == mAmbientTemperature)
 		{
@@ -1056,7 +1064,14 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 		}
 		else if(mState == State.STATE_MAPPING || mState == State.STATE_CAMERA)
 		{
-			stopMapping();
+			if(StreamOnlyPublisher.isEnabled())
+			{
+				stopCamera();
+			}
+			else
+			{
+				stopMapping();
+			}
 		}
 
 		mLocationManager.removeUpdates(mLocationListener);
@@ -1100,16 +1115,41 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 			String featureType = sharedPref.getString(getString(R.string.pref_key_features_type), getString(R.string.pref_default_features_type));
 			boolean keepAllDb = sharedPref.getBoolean(getString(R.string.pref_key_keep_all_db), Boolean.parseBoolean(getString(R.string.pref_default_keep_all_db)));
 			boolean optimizeFromGraphEnd = sharedPref.getBoolean(getString(R.string.pref_key_optimize_end), Boolean.parseBoolean(getString(R.string.pref_default_optimize_end)));
-			String optimizer = sharedPref.getString(getString(R.string.pref_key_optimizer), getString(R.string.pref_default_optimizer));
-			String markerDetection = sharedPref.getString(getString(R.string.pref_key_marker_detection), getString(R.string.pref_default_marker_detection));
-			String markerDetectionDepthError = sharedPref.getString(getString(R.string.pref_key_marker_detection_depth_error), getString(R.string.pref_default_marker_detection_depth_error));
-			mGPSSaved = PermissionHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) && sharedPref.getBoolean(getString(R.string.pref_key_gps_saved), Boolean.parseBoolean(getString(R.string.pref_default_gps_saved)));
-			if(mGPSSaved)
-			{
-				mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
-				mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_UI);
-				mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_UI);
-			}
+				String optimizer = sharedPref.getString(getString(R.string.pref_key_optimizer), getString(R.string.pref_default_optimizer));
+				String markerDetection = sharedPref.getString(getString(R.string.pref_key_marker_detection), getString(R.string.pref_default_marker_detection));
+				String markerDetectionDepthError = sharedPref.getString(getString(R.string.pref_key_marker_detection_depth_error), getString(R.string.pref_default_marker_detection_depth_error));
+				boolean streamOnlyEnabled = sharedPref.getBoolean(getString(R.string.pref_key_stream_only), Boolean.parseBoolean(getString(R.string.pref_default_stream_only)));
+				String streamServerIp = sharedPref.getString(getString(R.string.pref_key_stream_server_ip), getString(R.string.pref_default_stream_server_ip));
+				int streamServerPort = Integer.parseInt(getString(R.string.pref_default_stream_server_port));
+				try
+				{
+					streamServerPort = Integer.parseInt(sharedPref.getString(getString(R.string.pref_key_stream_server_port), getString(R.string.pref_default_stream_server_port)));
+				}
+				catch(NumberFormatException e)
+				{
+					Log.e(TAG, "Invalid Stream Server Port, using default", e);
+				}
+				StreamOnlyPublisher.configure(streamOnlyEnabled, streamServerIp, streamServerPort);
+				mGPSSaved = PermissionHelper.hasPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) && sharedPref.getBoolean(getString(R.string.pref_key_gps_saved), Boolean.parseBoolean(getString(R.string.pref_default_gps_saved)));
+				mSensorManager.unregisterListener(this, mAccelerometer);
+				if(mGyroscope != null)
+				{
+					mSensorManager.unregisterListener(this, mGyroscope);
+				}
+				if(mGPSSaved)
+				{
+					mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+					mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_UI);
+					mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_UI);
+				}
+				if(streamOnlyEnabled)
+				{
+					mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_GAME);
+					if(mGyroscope != null)
+					{
+						mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_GAME);
+					}
+				}
 			mEnvSensorsSaved = sharedPref.getBoolean(getString(R.string.pref_key_env_sensors_saved), Boolean.parseBoolean(getString(R.string.pref_default_env_sensors_saved)));
 			if(mEnvSensorsSaved)
 			{
@@ -1423,7 +1463,7 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 									mToast.makeText(getApplicationContext(), "Currently ARCore NDK driver doesn't support depth, only poses, RGB images and 3d features can be recorded.", mToast.LENGTH_LONG).show();
 								}
 								updateState(mState==State.STATE_VISUALIZING?State.STATE_VISUALIZING_CAMERA:State.STATE_CAMERA);	
-								if(mState==State.STATE_VISUALIZING_CAMERA && mItemLocalizationMode.isChecked())
+								if(!StreamOnlyPublisher.isEnabled() && mState==State.STATE_VISUALIZING_CAMERA && mItemLocalizationMode.isChecked())
 								{
 									RTABMapLib.setPausedMapping(nativeApplication, false);
 								}
@@ -1471,7 +1511,7 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 			startMapping();
 			break;
 		case R.id.stop_button:
-			if(mState == State.STATE_VISUALIZING_CAMERA)
+			if(mState == State.STATE_VISUALIZING_CAMERA || StreamOnlyPublisher.isEnabled())
 			{
 				stopCamera();
 			}
@@ -2273,8 +2313,8 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 			mItemLocalizationMode.setEnabled(true);
 			mItemTrajectoryMode.setEnabled(true);
 			mItemDataRecorderMode.setEnabled(true);
-			mButtonStart.setVisibility(mState == State.STATE_CAMERA?View.VISIBLE:View.INVISIBLE);
-			mButtonStop.setVisibility(mHudVisible && mState == State.STATE_MAPPING?View.VISIBLE:View.INVISIBLE);
+			mButtonStart.setVisibility(mState == State.STATE_CAMERA && !StreamOnlyPublisher.isEnabled()?View.VISIBLE:View.INVISIBLE);
+			mButtonStop.setVisibility(mHudVisible && (mState == State.STATE_MAPPING || (mState == State.STATE_CAMERA && StreamOnlyPublisher.isEnabled()))?View.VISIBLE:View.INVISIBLE);
 			break;
 		case STATE_PROCESSING:
 			mButtonLighting.setVisibility(View.INVISIBLE);
@@ -2385,6 +2425,12 @@ public class RTABMapActivity extends FragmentActivity implements OnClickListener
 
 	private void startMapping() {
 		if(!DISABLE_LOG) Log.i(TAG, String.format("startMapping()"));
+		if(StreamOnlyPublisher.isEnabled())
+		{
+			mToast.makeText(getActivity(), String.format("StreamOnly activé: le SLAM local est désactivé."), mToast.LENGTH_LONG).show();
+			updateState(State.STATE_CAMERA);
+			return;
+		}
 
 		updateState(State.STATE_MAPPING);
 

@@ -156,6 +156,12 @@
     <string name="pref_default_cluster_ratio">0.05</string>
     <string name="pref_key_notification_sound">pref_key_notification_sound</string>
     <string name="pref_default_notification_sound">true</string>
+    <string name="pref_key_stream_only">pref_key_stream_only</string>
+    <string name="pref_default_stream_only">false</string>
+    <string name="pref_key_stream_server_ip">pref_key_stream_server_ip</string>
+    <string name="pref_default_stream_server_ip">192.168.1.100</string>
+    <string name="pref_key_stream_server_port">pref_key_stream_server_port</string>
+    <string name="pref_default_stream_server_port">8765</string>
     <!-- Preference keys: END -->
 
     <string name="pref_title_rendering">Rendering</string>
@@ -179,6 +185,13 @@
     <string name="pref_summary_background_color"></string>
     <string name="pref_title_nodes_filtering">Nodes Filtering</string>
     <string name="pref_summary_nodes_filtering">Render only the newest point cloud of a loop closure.</string>
+    <string name="pref_title_streaming">Streaming</string>
+    <string name="pref_title_stream_only">StreamOnly Mode</string>
+    <string name="pref_summary_stream_only">Disable local SLAM/mapping and stream RGB + IMU to a remote ROS 2 bridge.</string>
+    <string name="pref_title_stream_server_ip">Stream Server IP</string>
+    <string name="pref_summary_stream_server_ip">IP of the PC running rtabmap_android_bridge websocket receiver.</string>
+    <string name="pref_title_stream_server_port">Stream Server Port</string>
+    <string name="pref_summary_stream_server_port">Port of the websocket receiver on the PC.</string>
 
     <string-array name="pref_density_keys">
         <item>"Maximum"</item>

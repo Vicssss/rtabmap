@@ -15,6 +15,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -246,18 +247,22 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
         ((Preference)findPreference(getString(R.string.pref_key_max_texture_distance))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_max_texture_distance))).getEntry() + ") "+getString(R.string.pref_summary_max_texture_distance));
         ((Preference)findPreference(getString(R.string.pref_key_min_texture_cluster_size))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_min_texture_cluster_size))).getEntry() + ") "+getString(R.string.pref_summary_min_texture_cluster_size));
 
-        ((Preference)findPreference(getString(R.string.pref_key_opt_depth))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_opt_depth))).getEntry() + ") "+getString(R.string.pref_summary_opt_depth));
-        ((Preference)findPreference(getString(R.string.pref_key_opt_color_radius))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_opt_color_radius))).getEntry() + ") "+getString(R.string.pref_summary_opt_color_radius));
-        ((Preference)findPreference(getString(R.string.pref_key_opt_min_cluster_size))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_opt_min_cluster_size))).getEntry() + ") "+getString(R.string.pref_summary_opt_min_cluster_size));
+	        ((Preference)findPreference(getString(R.string.pref_key_opt_depth))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_opt_depth))).getEntry() + ") "+getString(R.string.pref_summary_opt_depth));
+	        ((Preference)findPreference(getString(R.string.pref_key_opt_color_radius))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_opt_color_radius))).getEntry() + ") "+getString(R.string.pref_summary_opt_color_radius));
+	        ((Preference)findPreference(getString(R.string.pref_key_opt_min_cluster_size))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_opt_min_cluster_size))).getEntry() + ") "+getString(R.string.pref_summary_opt_min_cluster_size));
 
-        ((Preference)findPreference(getString(R.string.pref_key_cluster_ratio))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_cluster_ratio))).getEntry() + ") "+getString(R.string.pref_summary_cluster_ratio));
-        ((Preference)findPreference(getString(R.string.pref_key_gain_max_radius))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_gain_max_radius))).getEntry() + ") "+getString(R.string.pref_summary_gain_max_radius));
-    }
+	        ((Preference)findPreference(getString(R.string.pref_key_cluster_ratio))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_cluster_ratio))).getEntry() + ") "+getString(R.string.pref_summary_cluster_ratio));
+	        ((Preference)findPreference(getString(R.string.pref_key_gain_max_radius))).setSummary("("+((ListPreference)findPreference(getString(R.string.pref_key_gain_max_radius))).getEntry() + ") "+getString(R.string.pref_summary_gain_max_radius));
+	        String streamIp = ((EditTextPreference)findPreference(getString(R.string.pref_key_stream_server_ip))).getText();
+	        String streamPort = ((EditTextPreference)findPreference(getString(R.string.pref_key_stream_server_port))).getText();
+	        ((Preference)findPreference(getString(R.string.pref_key_stream_server_ip))).setSummary(streamIp == null ? getString(R.string.pref_default_stream_server_ip) : streamIp);
+	        ((Preference)findPreference(getString(R.string.pref_key_stream_server_port))).setSummary(streamPort == null ? getString(R.string.pref_default_stream_server_port) : streamPort);
+	    }
     
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         Preference pref = findPreference(key);
 
-        if (pref instanceof ListPreference) {
+	        if (pref instanceof ListPreference) {
         	if(key.compareTo(getString(R.string.pref_key_camera_driver))==0) pref.setSummary("("+ ((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_camera_driver));
         	if(key.compareTo(getString(R.string.pref_key_density))==0) pref.setSummary("("+ ((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_density));
         	if(key.compareTo(getString(R.string.pref_key_depth))==0) 
@@ -314,11 +319,19 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
         	if(key.compareTo(getString(R.string.pref_key_opt_color_radius))==0) pref.setSummary("("+((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_opt_color_radius));
         	if(key.compareTo(getString(R.string.pref_key_opt_min_cluster_size))==0) pref.setSummary("("+((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_opt_min_cluster_size));
         	
-        	if(key.compareTo(getString(R.string.pref_key_cluster_ratio))==0) pref.setSummary("("+((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_cluster_ratio));
-        	if(key.compareTo(getString(R.string.pref_key_gain_max_radius))==0) pref.setSummary("("+((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_gain_max_radius));
-        
-        }
-    }
+	        	if(key.compareTo(getString(R.string.pref_key_cluster_ratio))==0) pref.setSummary("("+((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_cluster_ratio));
+	        	if(key.compareTo(getString(R.string.pref_key_gain_max_radius))==0) pref.setSummary("("+((ListPreference)pref).getEntry() + ") "+getString(R.string.pref_summary_gain_max_radius));
+	        }
+	        else if (pref instanceof EditTextPreference)
+	        {
+	        	if(key.compareTo(getString(R.string.pref_key_stream_server_ip))==0 ||
+	        	   key.compareTo(getString(R.string.pref_key_stream_server_port))==0)
+	        	{
+	        		String text = ((EditTextPreference)pref).getText();
+	        		pref.setSummary(text == null ? "" : text);
+	        	}
+	        }
+	    }
     
     @Override
     protected void onResume() {

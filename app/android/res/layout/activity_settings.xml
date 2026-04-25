@@ -7,6 +7,27 @@
    			android:entries="@array/pref_camera_driver_keys"
    			android:entryValues="@array/pref_camera_driver_values"
    			android:defaultValue="@string/pref_default_camera_driver"/>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_streaming">
+        <com.introlab.rtabmap.CustomSwitchPreference
+            android:key="@string/pref_key_stream_only"
+            android:title="@string/pref_title_stream_only"
+            android:summary="@string/pref_summary_stream_only"
+            android:defaultValue="@string/pref_default_stream_only"/>
+        <EditTextPreference
+            android:key="@string/pref_key_stream_server_ip"
+            android:title="@string/pref_title_stream_server_ip"
+            android:summary="@string/pref_summary_stream_server_ip"
+            android:defaultValue="@string/pref_default_stream_server_ip"
+            android:singleLine="true"/>
+        <EditTextPreference
+            android:key="@string/pref_key_stream_server_port"
+            android:title="@string/pref_title_stream_server_port"
+            android:summary="@string/pref_summary_stream_server_port"
+            android:defaultValue="@string/pref_default_stream_server_port"
+            android:singleLine="true"/>
+    </PreferenceCategory>
         
     <PreferenceCategory
         android:title="@string/pref_title_rendering">
