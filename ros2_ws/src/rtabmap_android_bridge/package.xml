@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rtabmap_android_bridge</name>
+  <version>0.1.0</version>
+  <description>ROS 2 Humble bridge receiving Android StreamOnly websocket RGB+IMU and publishing ROS topics.</description>
+
+  <maintainer email="devnull@example.com">RTAB-Map Bridge</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -728,16 +728,38 @@ public class ARCoreSharedCamera {
 					}
 				}
 				
-				float[] fl = intrinsics.getFocalLength();
-				float[] pp = intrinsics.getPrincipalPoint();
-				if(!RTABMapActivity.DISABLE_LOG) Log.d(TAG, String.format("fx=%f fy=%f cx=%f cy=%f", fl[0], fl[1], pp[0], pp[1]));
-				
-				ByteBuffer y = image.getPlanes()[0].getBuffer().asReadOnlyBuffer();
-				ByteBuffer u = image.getPlanes()[1].getBuffer().asReadOnlyBuffer();
-				ByteBuffer v = image.getPlanes()[2].getBuffer().asReadOnlyBuffer();
+					float[] fl = intrinsics.getFocalLength();
+					float[] pp = intrinsics.getPrincipalPoint();
+					if(!RTABMapActivity.DISABLE_LOG) Log.d(TAG, String.format("fx=%f fy=%f cx=%f cy=%f", fl[0], fl[1], pp[0], pp[1]));
+					
+					ByteBuffer y = image.getPlanes()[0].getBuffer().asReadOnlyBuffer();
+					ByteBuffer u = image.getPlanes()[1].getBuffer().asReadOnlyBuffer();
+					ByteBuffer v = image.getPlanes()[2].getBuffer().asReadOnlyBuffer();
 
-				if(!RTABMapActivity.DISABLE_LOG) Log.d(TAG, String.format("RGB %dx%d len=%dbytes format=%d stamp=%f", 
-						image.getWidth(), image.getHeight(), y.limit(), image.getFormat(), stamp));
+					if(StreamOnlyPublisher.isEnabled())
+					{
+						StreamOnlyPublisher.publishFrame(
+								stamp,
+								image.getWidth(),
+								image.getHeight(),
+								y,
+								u,
+								v,
+								image.getPlanes()[0].getRowStride(),
+								image.getPlanes()[1].getRowStride(),
+								image.getPlanes()[2].getRowStride(),
+								image.getPlanes()[1].getPixelStride(),
+								image.getPlanes()[2].getPixelStride(),
+								lost?Pose.IDENTITY:pose,
+								fl[0], fl[1], pp[0], pp[1]);
+						firstFrameReceived = !lost;
+						image.close();
+						cloud.close();
+						return;
+					}
+
+					if(!RTABMapActivity.DISABLE_LOG) Log.d(TAG, String.format("RGB %dx%d len=%dbytes format=%d stamp=%f", 
+							image.getWidth(), image.getHeight(), y.limit(), image.getFormat(), stamp));
 				
 				float[] texCoord = new float[8];
 				frame.transformCoordinates2d(
